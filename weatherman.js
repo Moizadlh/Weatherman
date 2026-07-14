@@ -1,7 +1,7 @@
 import {weatherData} from "./weather-data.js"
 import readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
-import { validateAgainstMonthAndYear } from "./utils.js";
+import { showToastMonthAndYear, validateAgainstMonthAndYear, validateAgainstYear, validateUserInputMonthAndYearFormat } from "./utils.js";
 
 function yearlyReport(year){
     let highestTemperatureOfYear = weatherData[0].maxTemperatureC;
@@ -10,9 +10,14 @@ function yearlyReport(year){
     let lowestTemperatureDateOfYear = null;
     let mostHumidlevelOfYear = weatherData[0].maxHumidity;
     let mostHumidDateOfYear = null;
+    const validateUserInput = weatherData.find(data => validateAgainstYear(new Date(data.date) , year));
+    if (!validateUserInput) {
+        console.log(`Invalid Input`);
+        return;
+    }
     for (const data of weatherData) {
         let recordDate = new Date(data.date);
-        if(recordDate.toLocaleString("en-US", { timeZone: "Asia/Karachi", year: "numeric" }) == year){
+        if(validateAgainstYear(recordDate , year)){
             if (((parseInt(data?.maxTemperatureC)) > highestTemperatureOfYear)) {
                 highestTemperatureOfYear = parseInt(data.maxTemperatureC);
                 highestTemperatureDateOfYear = recordDate;
@@ -34,6 +39,11 @@ Humidity : ${mostHumidlevelOfYear}% on ${mostHumidDateOfYear.toLocaleString('def
 
 function monthlyReport(monthWithYear){
     monthWithYear = (String(monthWithYear)).split("/");
+    if (!validateUserInputMonthAndYearFormat(monthWithYear)) {
+        console.log(`Invalid Input`);
+        return;
+    }
+    showToastMonthAndYear(monthWithYear);
     const sumOfTemperatures = weatherData.reduce((accumulator, data) => {
         let recordDate = new Date(data.date);
         if (validateAgainstMonthAndYear(recordDate,monthWithYear)) {
@@ -52,8 +62,12 @@ Average Mean Humidity: ${Math.round(sumOfTemperatures.avgmeanHumidlevelOfMonth /
 
 function monthDayWiseReport(monthWithYear){
     monthWithYear = (String(monthWithYear)).split("/");
+    if (!validateUserInputMonthAndYearFormat(monthWithYear)) {
+        console.log(`Invalid Input`);
+        return;
+    }
     let day = 0
-    console.log((new Date(monthWithYear[0], parseInt(monthWithYear[1]) - 1)).toLocaleString('default', { month: 'long' }) , monthWithYear[0]);
+    showToastMonthAndYear(monthWithYear);
     for (const data of weatherData) {
         let recordDate = new Date(data.date);
         if(validateAgainstMonthAndYear(recordDate,monthWithYear)){ 
@@ -71,7 +85,7 @@ function monthDayWiseReport(monthWithYear){
 async function multipleMonthReports(numberOfReports) {
     const rl = readline.createInterface({ input, output });
     for (let index = 0; index < numberOfReports; index++) {
-        const month = await rl.question(`Enter Month (2006/8) [Report ${index + 1}]: `);
+        const month = await rl.question(`Enter the Year and Month for Report ${index + 1} (Format: YYYY/M, e.g., 2006/8):`);
         monthDayWiseReport(month);
     }
     rl.close();
@@ -79,7 +93,11 @@ async function multipleMonthReports(numberOfReports) {
 
 function combinedMonthlyReports(monthWithYear) {
     monthWithYear = (String(monthWithYear)).split("/");
-    console.log((new Date(monthWithYear[0], parseInt(monthWithYear[1]) - 1)).toLocaleString('default', { month: 'long' }) , monthWithYear[0])
+    if (!validateUserInputMonthAndYearFormat(monthWithYear)) {
+        console.log(`Invalid Input`);
+        return;
+    }
+    showToastMonthAndYear(monthWithYear);
     let day = 0
     for (const data of weatherData) {
         let recordDate = new Date(data.date);
